@@ -22,8 +22,7 @@ function getFormatedStringFromDays(numberOfDays) {
     var daysDisplay = days > 0 ? days + (days == 1 ? " day" : " days") : "";
     return yearsDisplay + monthsDisplay + daysDisplay; 
 }
-
-test('Verify differences between patent filing, publication, and grant dates', async ({ page }) => {
+test('Verify differences between patent filing, publication, and grant dates_2', async ({ page }) => {
 
 
   const searchKey = process.env.SEARCH_KEY;
@@ -36,12 +35,27 @@ test('Verify differences between patent filing, publication, and grant dates', a
   const searchBox = page.locator('(//input[@type="text"])[1]');
   await searchBox.pressSequentially(searchKey);
 //popup
+try {
   const accept = page.locator('//button[text()="I have read and agree to the terms"]');
-  await accept.click().catch(() => console.log('Element is not visible'));
+  await accept.waitFor({ state: 'visible', timeout: 5000 });
+  await accept.click();
+} catch (e) {
+  console.log('Element is not visible');
+}
 
 
-  await page.locator('div[class="title cropper"]').nth(1).click({ timeout: 30000 }, { force: true })
+   // Wait for results 
+  const results = page.locator('div[class="title cropper"]').nth(1);
 
+  const count = await results.count();
+
+  if (count === 0) {
+    console.log(`No results found for keyword: ${searchKey}`);
+    return;
+    
+  }
+  // Click first result 
+  await results.click({ timeout: 30000 }, { force: true });
 
   //get date text
   let publicationtext = await page.locator('(//table[@class="patentDetails noBorder"])[2]/tr[3]/td[2]').textContent()
@@ -54,6 +68,7 @@ test('Verify differences between patent filing, publication, and grant dates', a
   //convert text to date
 
   const publicationDate = parseDate(publicationtext);
+   console.log(publicationDate)
   const filingDate = parseDate(filingtext);
   const grantDate = parseDate(granttext);
 
@@ -62,15 +77,10 @@ test('Verify differences between patent filing, publication, and grant dates', a
   console.log(`Filing date: ${formatDate(filingDate)}`);
 
   //difference between two dates
-  // const pgDays=console.log(`Difference between Publication and Grant: ${daysBetween(publicationDate, grantDate)} days`);
-  // const pfDays=console.log(`Difference between Publication and Filing: ${daysBetween(publicationDate, filingDate)} days`);
-  // const gfDays=console.log(`Difference between Grant and Filing: ${daysBetween(grantDate, filingDate)} days`);
-
-//   console.log(`Difference between Publication and Grant: ${getFormatedStringFromDays(pgDays)(publicationDate, grantDate)} `)
-//   console.log(`Difference between Publication and Filing: ${getFormatedStringFromDays(pfDays)(publicationDate, FilingDate)} `)
-// console.log(`Difference between Grant and Filing: ${getFormatedStringFromDays(gfDays)(grantDate,FilingDate)} `)
-
- const pgDays = daysBetween(publicationDate, grantDate);
+  // console.log(`Difference between Publication date and Grant date are ${daysBetween(publicationDate, grantDate)} days`);
+  // console.log(`Difference between Publication date and Filing date are ${daysBetween(publicationDate, filingDate)} days`);
+  // console.log(`Difference between Grant date and Filing date are ${daysBetween(grantDate, filingDate)} days`);
+  const pgDays = daysBetween(publicationDate, grantDate);
  console.log(pgDays)
   const pfDays = daysBetween(publicationDate, filingDate);
   console.log(pfDays)
@@ -80,7 +90,5 @@ test('Verify differences between patent filing, publication, and grant dates', a
   console.log(`Difference between Publication and Grant: ${getFormatedStringFromDays(pgDays)}`);
   console.log(`Difference between Publication and Filing: ${getFormatedStringFromDays(pfDays)}`);
   console.log(`Difference between Grant and Filing: ${getFormatedStringFromDays(gfDays)}`);
-
-
 
 });
